@@ -9,7 +9,6 @@ class receiveThread(threading.Thread):  # The timer class is derived from the cl
         threading.Thread.__init__(self)
         self.socket = socket
         self.thread_stop = False
-
     def run(self):  # Overwrite run() method, put what you want the thread do here
         while not self.thread_stop:
             data = s.recv(1024)  # 把接收的数据定义为变量
@@ -47,7 +46,7 @@ s.connect((HOST,PORT))       #要连接的IP与端口
 
 rece = receiveThread(s)
 
-cap = cv2.VideoCapture(0)
+cap = cv2.VideoCapture(int(input("启用的摄像头号")))
 send = sendThread(s,cap)
 
 rece.start()

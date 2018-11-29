@@ -4,20 +4,20 @@ import threading
 import cv2
 import numpy as np
 
-im = np.zeros((480,640,3))
+
 class receiveThread(threading.Thread):  # The timer class is derived from the class threading.Thread
-    def __init__(self, socket):
+    def __init__(self, socket,imshowthread ):
         threading.Thread.__init__(self)
         self.socket = socket
         self.thread_stop = False
+        self.imshowThread = imshowthread
 
     def run(self):  # Overwrite run() method, put what you want the thread do here
         data = bytes()
         while not self.thread_stop:
-            global im
             data += self.socket.recv(1024)  # 把接收的数据定义为变量
             if len(data) > 480*640*3:
-                im = np.fromstring(data[:480*640*3],np.uint8).reshape((480,640,3))
+                self.imshowThread.img = np.fromstring(data[:480*640*3],np.uint8).reshape((480,640,3))
                 data = data[ 480*640*3:]
 
     def stop(self):
@@ -25,13 +25,15 @@ class receiveThread(threading.Thread):  # The timer class is derived from the cl
 
 
 class imgshowThreading(threading.Thread):  # The timer class is derived from the class threading.Thread
-    def __init__(self):
+    def __init__(self,id = 0):
         threading.Thread.__init__(self)
+        self.id = id
         self.thread_stop = False
+        self.img = np.zeros((480,640,3))
+
     def run(self):  # Overwrite run() method, put what you want the thread do here
         while not self.thread_stop:
-            global im
-            cv2.imshow("receive",im)
+            cv2.imshow("receive:"+str(self.id),self.img)
             if cv2.waitKey(10) == ord('q'):
                 break
 
@@ -61,8 +63,8 @@ while 1:
     conn,addr=s.accept()   #接受TCP连接，并返回新的套接字与IP地址
     print('Connected by',addr)    #输出客户端的IP地址
     if conn is not None:
-        rece = receiveThread(conn)
-        rece.start()
-        imthread = imgshowThreading()
+        imthread = imgshowThreading(id=addr[1])
         imthread.start()
+        rece = receiveThread(conn,imthread)
+        rece.start()
 conn.close()     #关闭连接
